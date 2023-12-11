@@ -15,7 +15,7 @@ stego_weight = 1
 message_length = 64
 
 # Train:
-batch_size = 50
+batch_size = 16
 cropsize = 128
 
 # Val:
@@ -23,8 +23,8 @@ batchsize_val = 16
 cropsize_val = 128
 
 # Data Path
-TRAIN_PATH = '/root/Dataset/DIV2K/DIV2K_train_HR'
-VAL_PATH = '/root/Dataset/test'
+TRAIN_PATH = '/kaggle/input/div2k-high-resolution-images/DIV2K_train_HR/DIV2K_train_HR'
+VAL_PATH = '/kaggle/input/div2k-high-resolution-images/DIV2K_valid_HR/DIV2K_valid_HR'
 
 format_train = 'png'
 format_val = 'png'
