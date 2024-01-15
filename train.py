@@ -23,7 +23,9 @@ def load(model, name):
     model.load_state_dict(network_state_dict)
 
 fed = FED(c.diff, c.message_length)
-fed.cuda()
+# fed.cuda()
+fed.to(device)
+
 params_trainable = (list(filter(lambda p: p.requires_grad, fed.parameters())))
 
 optim = torch.optim.Adam(params_trainable, lr=c.lr, betas=c.betas, eps=1e-6, weight_decay=c.weight_decay)
@@ -52,24 +54,25 @@ for i_epoch in range(c.epochs):
     fed.train()
     for idx_batch, cover_img in enumerate(trainloader):
         cover_img = cover_img.to(device)
-
-        message = torch.Tensor(np.random.choice([-0.5, 0.5], (cover_img.shape[0], c.message_length))).cuda()
+        message = torch.Tensor(np.random.choice([-0.5, 0.5], (cover_img.shape[0], c.message_length))).to(device)
+        # message = torch.Tensor(np.random.choice([-0.5, 0.5], (cover_img.shape[0], c.message_length)))
         input_data = [cover_img, message]
 
         #################
         #    forward:   #
         #################
 
-        stego_img, left_noise = fed(input_data)
+        stego_img, left_noise, _ = fed(input_data)
         stego_noise_img = noise_layer(stego_img.clone())
 
         #################
         #   backward:   #
         ################
 
-        guass_noise = torch.zeros(left_noise.shape).cuda()
+        guass_noise = torch.zeros(left_noise.shape).to(device)
+        # guass_noise = torch.zeros(left_noise.shape)
         output_data = [stego_noise_img, guass_noise]
-        re_img, re_message = fed(output_data, rev=True)
+        re_img, re_message, _ = fed(output_data, rev=True)
 
         stego_loss = stego_loss_fn(stego_img, cover_img)
         message_loss = message_loss_fn(re_message, message)
@@ -127,7 +130,7 @@ for i_epoch in range(c.epochs):
             #    forward:   #
             #################
 
-            test_stego_img, test_left_noise = fed(test_input_data)
+            test_stego_img, test_left_noise, _ = fed(test_input_data)
 
             if c.noise_flag:
                 test_stego_noise_img = test_noise_layer(test_stego_img.clone())
@@ -136,11 +139,12 @@ for i_epoch in range(c.epochs):
             #   backward:   #
             #################
 
-            test_z_guass_noise = torch.zeros(test_left_noise.shape).cuda()
+            test_z_guass_noise = torch.zeros(test_left_noise.shape).to(device)
+            # test_z_guass_noise = torch.zeros(test_left_noise.shape)
 
             test_output_data = [test_stego_noise_img, test_z_guass_noise]
 
-            test_re_img, test_re_message = fed(test_output_data, rev=True)
+            test_re_img, test_re_message, _ = fed(test_output_data, rev=True)
 
 
             psnr_temp_stego = psnr(test_cover_img, test_stego_img, 255)
@@ -156,6 +160,8 @@ for i_epoch in range(c.epochs):
             f'PSNR_STEGO: {np.mean(stego_psnr_history):.4f} | '
             f'Error: {1 - np.mean(error_history):.4f} | '
         )
+        if np.mean(error_history)<0.001:
+            c.message_weight=1
 
     if i_epoch > 0 and (i_epoch % c.SAVE_freq) == 0:
         torch.save({'opt': optim.state_dict(),

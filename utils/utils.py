@@ -29,8 +29,8 @@ def setup_logger(logger_name, root, phase, level=logging.INFO, screen=False, tof
         sh.setFormatter(formatter)
         lg.addHandler(sh)
 
-def load(name, net):
-    state_dicts = torch.load(name)
+def load(name, net, device):
+    state_dicts = torch.load(name,map_location=device)
     network_state_dict = {k: v for k, v in state_dicts['net'].items() if 'tmp_var' not in k}
     net.load_state_dict(network_state_dict)
 

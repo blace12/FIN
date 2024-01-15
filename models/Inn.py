@@ -83,5 +83,5 @@ class INN(nn.Module):
             if self.diff:
                 x1, x2 = out
                 x2 = self.diff_layer_post(x2)
-                out = [x1, x2]
+                out = [x1, x2, 0]
         return out

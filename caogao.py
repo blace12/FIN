@@ -1,0 +1,1 @@
+print('Cropout({r})'.format(r=1))

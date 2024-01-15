@@ -9,10 +9,7 @@ from utils.metric import *
 import torchvision
 
 def main():
-    if torch.cuda.is_available():
-        device = torch.device('cuda')
-    else:
-        device = torch.device('cpu')
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     parser = argparse.ArgumentParser(description='ENCODE')
     parser.add_argument('--noise-type', '-n', default='JPEG', type=str, help='The noise type will be added to the watermarked images.')
@@ -21,6 +18,8 @@ def main():
     parser.add_argument('--source-image-type', '-t', default="png", type=str, help='The type of the input images')
     parser.add_argument('--messages-path', '-m', default="messages", type=str, help='The messages to embed')
     parser.add_argument('--watermarked-image', '-o', default="output_images", type=str, help='The output images')
+    parser.add_argument('--testing-model', '-c', default="my", type=str,
+                        help='Choose to test the reproduced authors model or my improved model')
 
     args = parser.parse_args()
 
@@ -33,15 +32,20 @@ def main():
         if args.noise_type in ["JPEG", "HEAVY"]:
             if args.noise_type == "JPEG":
                 noise_layer = JpegTest(50)
-            fed_path = os.path.join("experiments",args.noise_type,"FED.pt")
+            # fed_path = os.path.join("experiments",args.noise_type,"FED.pt")
+            fed_path = os.path.join("experiments", "reproduction.pt")
+            if args.testing_model == 'my':
+                fed_path = os.path.join("experiments", "my.pt")
+            elif args.testing_model == 'author':
+                fed_path = os.path.join("experiments",args.noise_type,"FED.pt")
             fed = FED().to(device)
-            load(fed_path, fed)
+            load(fed_path, fed, device)
             fed.eval()
             for idx, source_images in enumerate(inn_loader):
                 source_images = source_images.to(device)
                 source_messgaes = torch.Tensor(np.random.choice([-0.5, 0.5], (source_images.shape[0], 64))).to(device)
 
-                stego_images, left_noise = fed([source_images, source_messgaes])
+                stego_images, left_noise, _ = fed([source_images, source_messgaes])
 
                 if args.noise_type == "JPEG":
                     final_images = noise_layer(stego_images.clone())

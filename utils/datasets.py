@@ -2,6 +2,9 @@ import glob
 from PIL import Image
 from natsort import natsorted
 import torchvision.transforms as T
+import albumentations as A
+
+from albumentations.pytorch import ToTensorV2
 from torch.utils.data import Dataset, DataLoader
 import config as c
 
